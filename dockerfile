@@ -1,3 +1,4 @@
+#Version Python
 FROM python:3.8-slim
 
 
@@ -14,4 +15,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # run the main.py file
-CMD ["python", "app/main.py"]
+CMD ["python", "main.py"]
