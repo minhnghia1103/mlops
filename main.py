@@ -19,7 +19,6 @@ import yaml
 # Đọc file config.yaml
 with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
-print(config)
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 parser.add_argument('--lr', default=config["learning_rate"], type=float, help='learning rate')
