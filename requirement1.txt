@@ -1,0 +1,13 @@
+fastapi
+mlflow
+numpy
+Pillow
+pydantic
+pytest
+PyYAML
+scikit_learn
+torch
+torchvision
+uvicorn
+dvc
+python-multipart

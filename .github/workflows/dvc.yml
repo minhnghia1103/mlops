@@ -23,14 +23,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.10
+          python-version: 3.8
 
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
-      - name: Install flash-attn
-        run: |
-          pip install flash-attn
+          
       - name: Configure DVC Remote Storage
         run: |
           dvc remote add -d datastorage s3://mlopsproject09 --local  # Cấu hình remote storage (nếu dùng AWS S3)
