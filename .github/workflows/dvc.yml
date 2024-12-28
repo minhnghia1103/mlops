@@ -1,0 +1,43 @@
+name: MLOps CI/CD Pipeline on Windows when DVC data changes
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'data.dvc'  # Chạy workflow khi tệp .dvc thay đổi
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'data.dvc'  # Chạy workflow khi tệp .dvc thay đổi
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Configure DVC Remote Storage
+        run: |
+          dvc remote add -d datastorage s3://mlopsproject09 --local  # Cấu hình remote storage (nếu dùng AWS S3)
+          dvc remote modify myremote access_key_id ${{ secrets.ACCESS_KEY_ID }} --local
+          dvc remote modify myremote secret_access_key ${{ secrets.SECRET_ACCESS_KEY }} --local
+          dvc remote modify datastorage region ${{ secrets.REGION }} --local
+      - name: Pull Data from DVC
+        run: |
+          dvc pull  # Tải dữ liệu từ remote storage
+
+      - name: Train Model
+        run: python main.py

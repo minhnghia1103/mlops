@@ -11,8 +11,13 @@ I'm playing with [PyTorch](http://pytorch.org/) on the CIFAR10 dataset.
 # Start training with: 
 python main.py
 
-# You can manually resume the training with: 
-python main.py --resume --lr=0.01
+# Bạn có thể sử dụng file config.yaml để thay đổi các tham số của mô hình đầu vào
+
+# Sau khi tranning model xong chạy lệnh "uvicorn api:app --reload --port 8000" để sử dụng trang web
+    http://127.0.0.1:8000
+
+# Sử dụng docker build image: "docker build -t myapp:latest ."
+    chạy container "docker run -d -p 8000:8000 myapp:latest"
 ```
 
 ## Accuracy

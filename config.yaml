@@ -1,5 +1,6 @@
 learning_rate: 0.1
 epochs: 1
 model: SimpleDLA
-
+batch_size_train: 128
+batch_size_test: 100
 #Các model hỗ trợ: VGG, ResNet18, PreActResNet18, GoogLeNet, DenseNet121, ResNeXt29_2x64d, MobileNet, MobileNetV2, DPN92, ShuffleNetG2, SENet18, ShuffleNetV2, EfficientNetB0, RegNetX_200MF, SimpleDLA

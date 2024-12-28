@@ -51,7 +51,7 @@ elif model == "RegNet":
 elif model == "SimpleDLA":
     net = SimpleDLA()
 # Load mô hình từ checkpoint
-checkpoint = torch.load('checkpoint\simpleDLA.pth')  # Tải checkpoint
+checkpoint = torch.load('./checkpoint/ckpt.pth')  # Tải checkpoint
 net.load_state_dict(checkpoint['net'])
 net.eval()  # Đặt mô hình ở chế độ đánh giá (eval)
 
@@ -76,44 +76,60 @@ transform = transforms.Compose([
 async def get_home():
     return """
     <html>
-        <head>
-            <title>Chọn ảnh và Dự đoán CIFAR-10</title>
-            <script>
-                async function handleSubmit(event) {
-                    event.preventDefault();  // Ngừng hành động mặc định của form
+    <head>
+        <title>Chọn ảnh và Dự đoán CIFAR-10</title>
+        <script>
+            async function handleSubmit(event) {
+                event.preventDefault();  // Ngừng hành động mặc định của form
 
-                    const formData = new FormData();
-                    const fileInput = document.querySelector("input[type='file']");
-                    formData.append("file", fileInput.files[0]);  // Lấy file ảnh từ input
+                const formData = new FormData();
+                const fileInput = document.querySelector("input[type='file']");
+                formData.append("file", fileInput.files[0]);  // Lấy file ảnh từ input
 
-                    // Gửi formData đến endpoint /predict
-                    const response = await fetch("/predict", {
-                        method: "POST",
-                        body: formData
-                    });
+                // Hiển thị ảnh trước khi gửi
+                const file = fileInput.files[0];
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    // Tạo một thẻ img để hiển thị ảnh
+                    const imageElement = document.createElement("img");
+                    imageElement.src = reader.result;
+                    imageElement.style.maxWidth = "300px";  // Giới hạn kích thước ảnh
+                    imageElement.style.maxHeight = "300px";
+                    document.getElementById("uploadedImage").innerHTML = "";
+                    document.getElementById("uploadedImage").appendChild(imageElement);
+                };
+                reader.readAsDataURL(file);  // Đọc file ảnh
 
-                    const data = await response.json();  // Nhận kết quả trả về từ server
+                // Gửi formData đến endpoint /predict
+                const response = await fetch("/predict", {
+                    method: "POST",
+                    body: formData
+                });
 
-                    // Kiểm tra nếu có lỗi từ server
-                    if (data.error) {
-                        document.getElementById("result").innerHTML = "<h3>Lỗi: " + data.error + "</h3>";
-                    } else {
-                        // Hiển thị kết quả dự đoán
-                        document.getElementById("result").innerHTML = "<h3>Ảnh thuộc lớp: " + data.prediction + "</h3>";
-                    }
+                const data = await response.json();  // Nhận kết quả trả về từ server
+
+                // Kiểm tra nếu có lỗi từ server
+                if (data.error) {
+                    document.getElementById("result").innerHTML = "<h3>Lỗi: " + data.error + "</h3>";
+                } else {
+                    // Hiển thị kết quả dự đoán
+                    document.getElementById("result").innerHTML = "<h3>Ảnh thuộc lớp: " + data.prediction + "</h3>";
                 }
-            </script>
-        </head>
-        <body>
-            <h2>Chọn một ảnh để dự đoán lớp (CIFAR-10)</h2>
-            <form id="predictForm" onsubmit="handleSubmit(event)">
-                <input type="file" name="file" accept="image/*" required>
-                <button type="submit">Dự đoán</button>
-            </form>
+            }
+        </script>
+    </head>
+    <body>
+        <h2>Chọn một ảnh để dự đoán lớp (CIFAR-10)</h2>
+        <form id="predictForm" onsubmit="handleSubmit(event)">
+            <input type="file" name="file" accept="image/*" required>
+            <button type="submit">Dự đoán</button>
+        </form>
 
-            <div id="result"></div>  <!-- Hiển thị kết quả dự đoán -->
-        </body>
-    </html>
+        <div id="uploadedImage" style="margin-top: 20px;"></div>  <!-- Hiển thị ảnh đã tải lên -->
+        <div id="result" style="margin-top: 20px;"></div>  <!-- Hiển thị kết quả dự đoán -->
+    </body>
+</html>
+
     """
 
 # Endpoint để thực hiện dự đoán

@@ -46,11 +46,11 @@ transform_test = transforms.Compose([
 
 trainset = torch.load('data/trainset.pt')
 trainloader = torch.utils.data.DataLoader(
-    trainset, batch_size=128, shuffle=True, num_workers=0)
+    trainset, batch_size=config["batch_size_train"], shuffle=True, num_workers=0)
 
 testset = torch.load('data/testset.pt')
 testloader = torch.utils.data.DataLoader(
-    testset, batch_size=100, shuffle=False, num_workers=0)
+    testset, batch_size=config["batch_size_test"], shuffle=False, num_workers=0)
 
 classes = ('plane', 'car', 'bird', 'cat', 'deer',
            'dog', 'frog', 'horse', 'ship', 'truck')
