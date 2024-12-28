@@ -24,5 +24,8 @@ jobs:
       - name: Install Dependencies
         run: pip install -r requirements.txt
 
+      - name: Install flash-attn
+        run: pip install flash-attn
+
       - name: Train Model
         run: python main.py
