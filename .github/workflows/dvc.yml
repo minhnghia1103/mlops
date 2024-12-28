@@ -23,7 +23,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.10
+          python-version: 3.12
 
       - name: Install Dependencies
         run: |
@@ -32,8 +32,8 @@ jobs:
       - name: Configure DVC Remote Storage
         run: |
           dvc remote add -d datastorage s3://mlopsproject09 --local  # Cấu hình remote storage (nếu dùng AWS S3)
-          dvc remote modify myremote access_key_id ${{ secrets.ACCESS_KEY_ID }} --local
-          dvc remote modify myremote secret_access_key ${{ secrets.SECRET_ACCESS_KEY }} --local
+          dvc remote modify datastorage access_key_id ${{ secrets.ACCESS_KEY_ID }} --local
+          dvc remote modify datastorage secret_access_key ${{ secrets.SECRET_ACCESS_KEY }} --local
           dvc remote modify datastorage region ${{ secrets.REGION }} --local
       - name: Pull Data from DVC
         run: |
