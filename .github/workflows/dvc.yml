@@ -27,7 +27,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install -r requirements.txt
+          pip install -r requirement1.txt
 
       - name: Configure DVC Remote Storage
         run: |
