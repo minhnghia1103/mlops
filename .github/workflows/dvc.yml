@@ -28,9 +28,10 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
-          
+
       - name: Configure DVC Remote Storage
         run: |
+          pip install 'dvc[s3]'
           dvc remote add -d datastorage s3://mlopsproject09 --local  # Cấu hình remote storage (nếu dùng AWS S3)
           dvc remote modify datastorage access_key_id ${{ secrets.ACCESS_KEY_ID }} --local
           dvc remote modify datastorage secret_access_key ${{ secrets.SECRET_ACCESS_KEY }} --local
