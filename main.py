@@ -1,189 +1,61 @@
-'''Train CIFAR10 with PyTorch.'''
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
-import torch.backends.cudnn as cudnn
-
+from src.train import train_model
+from src.model import model
 import torchvision
-import torchvision.transforms as transforms
+import torchvision.transforms as transform
+import torch.optim as optim
+import torch.nn as nn
+from torch.utils.data import DataLoader, random_split, Subset
+import mlflow.pytorch
+import config
 
-import os
-import argparse
 
-from models import *
-from utils import progress_bar
+# Tải bộ dữ liệu CIFAR-10
+train_dataset = torchvision.datasets.CIFAR10(
+    root='./data',
+    train=True,
+    download=True,
+    transform=transform
+)
 
-import yaml
+test_dataset = torchvision.datasets.CIFAR10(
+    root='./data',
+    train=False,
+    download=True,
+    transform=transform
+)
 
-# Đọc file config.yaml
-with open("config.yaml", "r") as file:
-    config = yaml.safe_load(file)
+# Hàm lọc dữ liệu chỉ lấy 3 lớp đầu tiên (0: Máy bay, 1: Xe hơi, 2: Chim)
+def filter_classes(dataset, classes=[0, 1, 2]):
+    indices = [i for i, label in enumerate(dataset.targets) if label in classes]
+    return Subset(dataset, indices)
 
-parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
-parser.add_argument('--lr', default=config["learning_rate"], type=float, help='learning rate')
-parser.add_argument('--resume', '-r', action='store_true',
-                    help='resume from checkpoint')
-args = parser.parse_args()
+# Lọc dữ liệu chỉ lấy 3 lớp đầu tiên
+filtered_train_dataset = filter_classes(train_dataset)
+filtered_test_dataset = filter_classes(test_dataset)
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-best_acc = 0  # best test accuracy
-start_epoch = 0  # start from epoch 0 or last checkpoint epoch
+train_size = int(0.8 * len(filtered_train_dataset))  # 80% dữ liệu cho training
+val_size = len(filtered_train_dataset) - train_size  # 20% dữ liệu cho validation
 
-# Data
-print('==> Preparing data..')
-transform_train = transforms.Compose([
-    transforms.RandomCrop(32, padding=4),
-    transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
+train_subset, val_subset = random_split(filtered_train_dataset, [train_size, val_size])
 
-transform_test = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
+# Tạo DataLoader cho từng tập
+train_loader = DataLoader(train_subset, batch_size=BATCH_SIZE, shuffle=True)
+val_loader = DataLoader(val_subset, batch_size=BATCH_SIZE, shuffle=False)
+test_loader = DataLoader(filtered_test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-trainset = torch.load('data/trainset.pt')
-trainloader = torch.utils.data.DataLoader(
-    trainset, batch_size=config["batch_size_train"], shuffle=True, num_workers=0)
-
-testset = torch.load('data/testset.pt')
-testloader = torch.utils.data.DataLoader(
-    testset, batch_size=config["batch_size_test"], shuffle=False, num_workers=0)
-
-classes = ('plane', 'car', 'bird', 'cat', 'deer',
-           'dog', 'frog', 'horse', 'ship', 'truck')
-
-# Model
-print('==> Building model..')
-
-model = config["model"]
-if model == "VGG":
-    net = VGG('VGG19')
-elif model == "ResNet":
-    net = ResNet18()
-elif model == "PreActResNet":
-    net = PreActResNet18()
-elif model == "GoogLeNet":
-    net = GoogLeNet()
-elif model == "DenseNet":
-    net = DenseNet121()
-elif model == "ResNeXt":
-    net = ResNeXt29_2x64d()
-elif model == "MobileNet":
-    net = MobileNet()
-elif model == "MobileNetV2":
-    net = MobileNetV2()
-elif model == "DPN":
-    net = DPN92()
-elif model == "ShuffleNetG2":
-    net = ShuffleNetG2()
-elif model == "SENet":
-    net = SENet18()
-elif model == "ShuffleNetV2":
-    net = ShuffleNetV2(1)
-elif model == "EfficientNet":
-    net = EfficientNetB0()
-elif model == "RegNet":
-    net = RegNetX_200MF()
-elif model == "SimpleDLA":
-    net = SimpleDLA()
-# net = VGG('VGG19')
-# net = ResNet18()
-# net = PreActResNet18()
-# net = GoogLeNet()
-# net = DenseNet121()
-# net = ResNeXt29_2x64d()
-# net = MobileNet()
-# net = MobileNetV2()
-# net = DPN92()
-# net = ShuffleNetG2()
-# net = SENet18()
-# net = ShuffleNetV2(1)
-# net = EfficientNetB0()
-# net = RegNetX_200MF()
-#net = SimpleDLA()
-net = net.to(device)
-if device == 'cuda':
-    net = torch.nn.DataParallel(net)
-    cudnn.benchmark = True
-
-if args.resume:
-    # Load checkpoint.
-    print('==> Resuming from checkpoint..')
-    assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
-    checkpoint = torch.load('./checkpoint/ckpt.pth')
-    net.load_state_dict(checkpoint['net'])
-    best_acc = checkpoint['acc']
-    start_epoch = checkpoint['epoch']
-
+model = model()
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=args.lr,
-                      momentum=0.9, weight_decay=5e-4)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=200)
+optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
+# Start MLflow run
+with mlflow.start_run():
+    mlflow.log_param('batch_size', BATCH_SIZE)
+    mlflow.log_param('epochs', NUM_EPOCHS)
+    mlflow.log_param('learning_rate', LEARNING_RATE)
 
-# Training
-def train(epoch):
-    print('\nEpoch: %d' % epoch)
-    net.train()
-    train_loss = 0
-    correct = 0
-    total = 0
-    for batch_idx, (inputs, targets) in enumerate(trainloader):
-        inputs, targets = inputs.to(device), targets.to(device)
-        optimizer.zero_grad()
-        outputs = net(inputs)
-        loss = criterion(outputs, targets)
-        loss.backward()
-        optimizer.step()
+    # Train the model and log the results
+    train_model(model, train_loader, criterion, optimizer, num_epochs=NUM_EPOCHS)
 
-        train_loss += loss.item()
-        _, predicted = outputs.max(1)
-        total += targets.size(0)
-        correct += predicted.eq(targets).sum().item()
+    # Log the trained model to MLflow
+    mlflow.pytorch.log_model(model, "vgg16_model")
 
-        progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-                     % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
-
-
-def test(epoch):
-    global best_acc
-    net.eval()
-    test_loss = 0
-    correct = 0
-    total = 0
-    with torch.no_grad():
-        for batch_idx, (inputs, targets) in enumerate(testloader):
-            inputs, targets = inputs.to(device), targets.to(device)
-            outputs = net(inputs)
-            loss = criterion(outputs, targets)
-
-            test_loss += loss.item()
-            _, predicted = outputs.max(1)
-            total += targets.size(0)
-            correct += predicted.eq(targets).sum().item()
-
-            progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-                         % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
-
-    # Save checkpoint.
-    acc = 100.*correct/total
-    if acc > best_acc:
-        print('Saving..')
-        state = {
-            'net': net.state_dict(),
-            'acc': acc,
-            'epoch': epoch,
-        }
-        if not os.path.isdir('checkpoint'):
-            os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/ckpt.pth')
-        best_acc = acc
-
-epochs = config["epochs"]
-for epoch in range(start_epoch, start_epoch + epochs):
-    train(epoch)
-    test(epoch)
-    scheduler.step()

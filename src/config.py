@@ -1,0 +1,5 @@
+BATCH_SIZE = 64
+LEARNING_RATE = 0.001
+NUM_EPOCHS = 10
+INPUT_SIZE = (224, 224)  # Kích thước đầu vào ảnh
+NUM_CLASSES = 10
