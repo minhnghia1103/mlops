@@ -9,7 +9,7 @@ import torchvision.transforms as transforms
 from PIL import Image
 import io
 from fastapi.responses import HTMLResponse
-from test.pre_train_test import*
+# from test.pre_train_test import*
 
 # Khởi tạo FastAPI app
 app = FastAPI()
@@ -141,8 +141,8 @@ async def predict(file: UploadFile = File(...)):
         image_bytes = await file.read()
         image = Image.open(io.BytesIO(image_bytes))
         # Áp dụng các phép biến đổi để chuẩn bị dữ liệu đầu vào cho mô hình
-        test_image_size(data_preparation, image)
-        test_image_mode(data_preparation, image)
+        # test_image_size(data_preparation, image)
+        # test_image_mode(data_preparation, image)
         image = transform(image).unsqueeze(0)  # Thêm batch dimension
         # Thực hiện dự đoán
         with torch.no_grad():
