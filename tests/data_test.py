@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 
 def test_trainset():
     # Thử tải trainset
-    trainset = torch.load('../data/trainset.pt')
+    trainset = torch.load('./data/trainset.pt')
     assert trainset is not None, "Trainset is None."
     assert len(trainset) > 0, "Trainset is empty."
 
@@ -16,7 +16,7 @@ def test_trainset():
 
 def test_testset():
     # Thử tải testset
-    testset = torch.load('../data/testset.pt')
+    testset = torch.load('./data/testset.pt')
     assert testset is not None, "Testset is None."
     assert len(testset) > 0, "Testset is empty."
 
